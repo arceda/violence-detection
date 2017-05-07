@@ -7,3 +7,5 @@ This project aims to be a framework to store all the state of art in violence de
 
 A improve to the ViF algorithm is already implemented, but there is a lot of much work to do.
 
+Demo:
+https://www.youtube.com/watch?v=igjzUaZeG4I
