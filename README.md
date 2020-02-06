@@ -12,8 +12,13 @@ Citing
 Arceda, V. M., Fabián, K. F., & Gutíerrez, J. C. (2016). Real time violence detection in video.
 
 # Fast car crash detection in video
-In Car-crash folder the implementation of "Fast car crash detection in video" is presented.
+
+In car-crash folder the implementation of "Fast car crash detection in video" is presented.
 https://ieeexplore.ieee.org/abstract/document/8786306
+
+In order to test the code, you need to download YOLO3 and compile Darknet as is mention in "https://pjreddie.com/darknet/install/"  it will generate the file "libdarknet.so". Then, edit the file "darknet.py" and edit the line:
+
+lib = CDLL(<<path of libdarknet.so>>, RTLD_GLOBAL)
 
 Citing
 
