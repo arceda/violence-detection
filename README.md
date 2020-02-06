@@ -10,3 +10,15 @@ https://digital-library.theiet.org/content/conferences/10.1049/ic.2016.0030
 # Fast car crash detection in video
 In Car-crash folder the implementation of "Fast car crash detection in video" is presented.
 https://ieeexplore.ieee.org/abstract/document/8786306
+
+Arceda, V. E. M., & Riveros, E. L. (2018, October). Fast car crash detection in video. In 2018 XLIV Latin American Computer Conference (CLEI) (pp. 632-637). IEEE.
+
+@inproceedings{arceda2018fast,
+  title={Fast car crash detection in video},
+  author={Arceda, Vicente Enrique Machaca and Riveros, Elian Laura},
+  booktitle={2018 XLIV Latin American Computer Conference (CLEI)},
+  pages={632--637},
+  year={2018},
+  organization={IEEE}
+}
+
