@@ -20,7 +20,7 @@ from sklearn import metrics
 import pickle
 from glob import glob
 from sklearn.svm import SVC
-from sklearn import cross_validation
+#from sklearn import cross_validation
 from numpy import genfromtxt
 import numpy as np
 import cv2
@@ -43,7 +43,7 @@ y_choques = y_choques.reshape(choques.shape[0],1)
 X = np.vstack((no_choques, choques))
 y = np.vstack((y_no_choques, y_choques))
 
-print X.shape, y.shape
+print (X.shape, y.shape)
 #print(no_choques)
 #print(choques)
 
@@ -51,7 +51,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
 clf = SVC(kernel='linear', probability=True, tol=1e-3)  # , verbose = True) #Set the classifier as a support vector machines with
 
 clf.fit(X_train, y_train)
-print "Normal score: ", clf.score(X_test, y_test)
+print("Normal score: ", clf.score(X_test, y_test))
 
 
 
@@ -115,7 +115,7 @@ plt.show()
 #print(y_test)
 #print(clf.predict(X_test))
 
-pickle.dump(clf, open('models/model-svm.sav', 'wb'))
+#pickle.dump(clf, open('models/model-svm.sav', 'wb'))
 
 
 
@@ -165,3 +165,9 @@ X, Y = load_bd()
 
     print "Normal score: ", clf.score(X_test, y_test)
 '''
+
+
+
+clf_full = SVC(kernel='linear', probability=True, tol=1e-3)  # , verbose = True) #Set the classifier as a support vector machines with
+clf_full.fit(X, y)
+pickle.dump(clf_full, open('models/model-svm.sav', 'wb'))

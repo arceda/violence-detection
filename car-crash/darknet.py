@@ -155,8 +155,8 @@ if __name__ == "__main__":
     # meta = load_meta("cfg/imagenet1k.data")
     # r = classify(net, meta, im)
     # print r[:10]
-    net = load_net("/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.cfg", "/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.weights", 0)
-    meta = load_meta("/home/vicente/projects/object-detection/yolo/yolo3/darknet/data/coco.data")
-    r = detect(net, meta, "/home/vicente/projects/object-detection/yolo/yolo3/darknet/data/dog.jpg")
-    print r
+    net = load_net(b"/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.cfg", b"/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.weights", 0)
+    meta = load_meta(b"/home/vicente/projects/object-detection/yolo/yolo3/darknet/data/coco.data")
+    r = detect(net, meta, b"/home/vicente/projects/object-detection/yolo/yolo3/darknet/data/dog.jpg")
+    print(r)
 

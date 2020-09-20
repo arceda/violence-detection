@@ -13,15 +13,20 @@ import pickle
 clf = pickle.load(open('models/model-svm.sav', 'rb'))
 total_frames = []
 sub_sampling = 29
-net = yolo.load_net("/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.cfg",
-              "/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.weights", 0)
-meta = yolo.load_meta("/home/vicente/projects/object-detection/yolo/yolo3/darknet/data/coco.data")
+net = yolo.load_net(b"/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.cfg",
+                    b"/home/vicente/projects/object-detection/yolo/yolo3/darknet/cfg/yolov3.weights", 0)
+meta = yolo.load_meta(b"/home/vicente/projects/object-detection/yolo/yolo3/darknet/data/coco.data")
 counter_sub_video = 1
 data = []
 
 
 class Tracker:
-    def __init__(self, frame, (xmin, ymin, xmax, ymax), name, frame_index):
+    #def __init__(self, frame, (xmin, ymin, xmax, ymax), name, frame_index):
+    def __init__(self, frame, rec, name, frame_index):
+        xmin = rec[0]
+        ymin = rec[1]
+        xmax = rec[2]
+        ymax = rec[3]
         self.tracker = dlib.correlation_tracker()
         self.tracker.start_track(frame, dlib.rectangle(xmin, ymin, xmax, ymax))
         self.name = name
@@ -115,9 +120,12 @@ class Tracker:
 
 #procesamo ViF por cada tracker
 def vif(trackers,  frame_width, frame_height, frame):
+    crashes_detected = []
     global sub_sampling
     print ("procesando ViF en cada tracker")
     global counter_sub_video
+    if len(trackers) == 0:
+        print("NO HAY TRACKERSSSSSSS")
     for i, tracker in enumerate(trackers):
         print("procesando ViF en tracker " + str(tracker.name), tracker.get_position().right() - tracker.get_position().left(), tracker.get_position().bottom() - tracker.get_position().top())
 
@@ -167,8 +175,8 @@ def vif(trackers,  frame_width, frame_height, frame):
                 #    u, v, m = hs.HornSchunck(tracker_frames[-2], tracker_frames[-1])
                 #    print("optic flow vector magnitude", m)
 
-                cv2.imshow("sub_image", sub_image)
-                cv2.waitKey(0)
+                #cv2.imshow("sub_image", sub_image)
+                #cv2.waitKey(0)
                 #out.write(sub_image)
 
 
@@ -185,7 +193,7 @@ def vif(trackers,  frame_width, frame_height, frame):
             feature_vec = feature_vec.reshape(1, 304)
             print (feature_vec.shape)
             result = clf.predict(feature_vec)
-            print "RESULT SVM", result
+            print ("RESULT SVM", result)
             font = cv2.FONT_HERSHEY_SIMPLEX
             print("RESULT ", result[0])
             if result[0] == 0.0:
@@ -194,18 +202,20 @@ def vif(trackers,  frame_width, frame_height, frame):
             else:
                 print(1)
                 title = "car-crash"
+                crashes_detected.append( [box[0], box[1], box[2], box[3]]  )
                 overlay = frame.copy()
                 cv2.rectangle(overlay, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), -1)
                 opacity = 0.4
                 cv2.addWeighted(overlay, opacity, frame, 1 - opacity, 0, frame)
 
             #cv2.putText(frame, title, (int(tracker.get_position().left()), int(tracker.get_position().top())), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-            cv2.imshow("win", frame)
-            cv2.waitKey(0)
+            #cv2.imshow("win", frame)
+            #cv2.waitKey(30)
 
             ###################################################################
             ###################################################################
 
+    return crashes_detected
 
 def start_process(path, net, meta):
     global total_frames
@@ -257,9 +267,13 @@ def start_process(path, net, meta):
 
     Para el flujo optico FIN
     '''
+    crashes_detected = []
+    out = cv2.VideoWriter('outpy.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 10, (frame_width, frame_height))
 
     while True:
         ret, frame = cap.read()
+
+        
 
         if ret:
             new_frame = frame.copy()
@@ -268,7 +282,7 @@ def start_process(path, net, meta):
             # las veces que se eejcua ViF
             if index > 0 and (index % sub_sampling == 0 or index == frame_count - 1):
                 print ("FRAME " + str(index) + " VIF")
-                vif(trackers, frame_width, frame_height, frame)
+                crashes_detected = vif(trackers, frame_width, frame_height, frame)
 
             # las veces que se ejecuta yolo
             if index % sub_sampling == 0 or index == 0 :
@@ -276,7 +290,7 @@ def start_process(path, net, meta):
                 trackers = []
 
                 cv2.imwrite("tmp/img.jpg", frame)
-                detections = yolo.detect(net, meta, "/home/vicente/projects/violence/car-crash/tmp/img.jpg")
+                detections = yolo.detect(net, meta, b"tmp/img.jpg")
                 print (detections)
                 for det in detections:
                     label = det[0]
@@ -285,28 +299,40 @@ def start_process(path, net, meta):
 
                     width = int(box[2])
                     height = int(box[3])
-                    xmin = int(box[0]) - width / 2
-                    ymin = int(box[1]) - height / 2
+                    #xmin = int(box[0]) - width / 2
+                    #ymin = int(box[1]) - height / 2
+                    xmin = int(box[0] - (width / 2))
+                    ymin = int(box[1] - (height / 2))
 
-                    if label == 'car':
-                        cv2.rectangle(frame, (xmin, ymin), (xmin + width, ymin + height), (0, 0, 255))
+                    print("yolo detection: ", label)
+
+                    if label == b'car':
+                        print("car finded")
+                        #cv2.rectangle(frame, (xmin, ymin), (xmin + width, ymin + height), (0, 0, 255), 3)
+                        start_point = (int(xmin), int(ymin))
+                        end_point = (int(xmin + width), int(ymin + height))
+                        cv2.rectangle(frame, start_point, end_point, (0, 0, 255))
 
                         # solo agregamos al tracker si esta dentro de los limites del frame, no no hacemos esto
                         # el tracker no funciona bien
 
+                        
                         if xmin + width < frame_width and ymin + height < frame_height:
-                            tr = Tracker(frame, (xmin, ymin, xmin + width, ymin + height), random.randrange(100), index)
+                            tracker_rect = (xmin, ymin, xmin + width, ymin + height)
+                            tr = Tracker(frame, tracker_rect, random.randrange(100), index)
                             trackers.append(tr)
                         else:
                             if xmin + width < frame_width and ymin + height >= frame_height:
-                                tr = Tracker(frame, (xmin, ymin, xmin + width, frame_height - 1), random.randrange(100),
+                                tracker_rect = (xmin, ymin, xmin + width, frame_height - 1)
+                                tr = Tracker(frame, tracker_rect, random.randrange(100),
                                              index)
                             elif xmin + width >= frame_width and ymin + height < frame_height:
-                                tr = Tracker(frame, (xmin, ymin, frame_width - 1, ymin + height), random.randrange(100),
+                                tracker_rect = (xmin, ymin, frame_width - 1, ymin + height)
+                                tr = Tracker(frame, tracker_rect, random.randrange(100),
                                              index)
                             else:
-                                tr = Tracker(frame, (xmin, ymin, frame_width - 1, frame_height - 1),
-                                             random.randrange(100), index)
+                                tracker_rect = (xmin, ymin, frame_width - 1, frame_height - 1)
+                                tr = Tracker(frame, tracker_rect, random.randrange(100), index)
                             trackers.append(tr)
 
             else:
@@ -337,14 +363,22 @@ def start_process(path, net, meta):
                     tr_pos = tracker.update(frame)
                     if tr_pos.left() > 0 and tr_pos.top() > 0 and tr_pos.right() < frame_width and tr_pos.bottom() < frame_height:
                         cv2.rectangle(frame, (int(tr_pos.left()), int(tr_pos.top())),
-                                      (int(tr_pos.right()), int(tr_pos.bottom())), (0, 0, 255))
+                                      (int(tr_pos.right()), int(tr_pos.bottom())), (0, 255, 0))
                         tracker.add_history(tr_pos)
 
                         # al parecer no funcioa bien, suelen haber intersecciones entre los vvectores de un mismo auto, ademas falta corregir cuales son lostracker que intersetan
                         # check_intersection(lines, frame, trackers)
 
+                if len(crashes_detected) > 0: # se detectaron choques antes y mantenemos por un momento el pintado
+                    for rect in crashes_detected:
+                        overlay = frame.copy()
+                        cv2.rectangle(overlay, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), -1)
+                        opacity = 0.4
+                        cv2.addWeighted(overlay, opacity, frame, 1 - opacity, 0, frame)
+
+            out.write(frame)
             cv2.imshow("win", frame)
-            if cv2.waitKey(0) & 0xFF == ord('q'):
+            if cv2.waitKey(30) & 0xFF == ord('q'):
                 break
 
             index += 1
@@ -458,7 +492,10 @@ cv2.waitKey(0)
 
 #goog: 10, 6,
 
-start_process("choque10.mp4", net, meta)
+#start_process("choque5.mp4", net, meta)
+#start_process("choque6.mp4", net, meta)
+#start_process("choque8.mp4", net, meta)
+
 
 
 
@@ -466,6 +503,7 @@ start_process("choque10.mp4", net, meta)
 #    start_process(file, net, meta)
 
 #np.savetxt("data.csv", data, delimiter=",")
+
 
 
 
